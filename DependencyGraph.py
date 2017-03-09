@@ -111,6 +111,21 @@ class DependencyGraph():
     def printNodes(self):
         pprint(self.nodes)
 
+    def getListOfDependentNodesRecurse(self, node, dependents=None, visited=None):
+        if not dependents:
+            dependents = []
+        if not visited:
+            visited = []
+
+        visited.append(node)
+        dependents.extend(self.dep_dict[node])
+        dependents = list(set(dependents)) # Get rid of duplicates
+        for dep in dependents:
+            if dep not in visited:
+                dependents.extend(self.getListOfDependentNodesRecurse(dep, dependents, visited))
+        dependents = list(set(dependents))
+        return dependents
+
     def minimizeGraph(self, origin_node=None, terminal_node=None):
         if origin_node:
             self.setOriginNode(origin_node)
@@ -175,5 +190,13 @@ if __name__ == '__main__':
                     self.assertTrue(str(e) == 'Target node would cause a dependency cycle if added')
                 else:
                     raise Exception, 'Failed to find cycle'
+
+            def test_get_list_of_dependent_nodes_recurse(self):
+                self.dep_graph.dep_dict = {'GameStart': {}, 'PokeyEscape': {'GetSword': 4},
+                                           'GetSword': {'GameStart': 5}, 'WESS': {'PokeyEscape': 10}}
+                inputs = (('PokeyEscape', ['GameStart', 'GetSword']),
+                          ('WESS', ['GameStart', 'PokeyEscape', 'GetSword']))
+                test_function = self.dep_graph.getListOfDependentNodesRecurse
+                self.assertTrue(all(test_function(i[0]) == i[1] for i in inputs))
 
         unittest.main()
