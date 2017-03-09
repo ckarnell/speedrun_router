@@ -119,6 +119,11 @@ class DependencyGraph():
         if self.origin_node is None or self.terminal_node is None:
             raise Exception('Both origin and terminal nodes must be set')
 
+        nodes_without_origin = self.dep_dict.keys()
+        nodes_without_origin.remove(self.origin_node)
+        if any(self.dep_dict[node] == {} for node in nodes_without_origin):
+            raise Exception('All nodes except the origin node must have at least one dependence')
+
 if __name__ == '__main__':
     debug = True # Set to True to run tests
 
