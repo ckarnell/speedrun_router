@@ -127,10 +127,18 @@ class DependencyGraph():
         return dependents
 
     def minimizeGraph(self):
-        nodes_without_origin = self.dep_dict.keys()
-        nodes_without_origin.remove(self.origin_node)
-        if any(self.dep_dict[node] == {} for node in nodes_without_origin):
-            raise Exception('All nodes except the origin node must have at least one dependence')
+        for top_node in self.dep_dict.keys():
+            dependencies = self.dep_dict[top_node]
+            all_dependencies = []
+            for dependency in dependencies:
+                all_dependencies.extend(self.getListOfDependentNodesRecurse(dependency))
+            all_dependencies = list(set(all_dependencies))
+            # Delete redundant dependencies
+            for dependency in all_dependencies:
+                try:
+                    del self.dep_dict[top_node][dependency]
+                except KeyError:
+                    pass
 
     def applyDijkstra(self):
         '''
@@ -219,5 +227,16 @@ if __name__ == '__main__':
                           ('GameStart', []))
                 test_function = self.dep_graph.getListOfDependentNodesRecurse
                 self.assertTrue(all(test_function(i[0]) == i[1] for i in inputs))
+
+            def test_minimize_graph(self):
+                self.dep_graph.dep_dict = {'GameStart': {},
+                                           'GetSword': {'GameStart': None},
+                                           'PokeyEscape': {'GameStart': None, 'GetSword': None},
+                                           'WESS': {'GameStart': None, 'GetSword': None, 'PokeyEscape': None}}
+                self.dep_graph.minimizeGraph()
+                self.assertEqual(self.dep_graph.dep_dict, {'GetSword': {'GameStart': None},
+                                                           'WESS': {'PokeyEscape': None},
+                                                           'PokeyEscape': {'GetSword': None},
+                                                           'GameStart': {}})
 
         unittest.main()
